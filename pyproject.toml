@@ -2,9 +2,10 @@
 name = "caps"
 version = "0.1.0"
 description = "Clean Architecture Python SDK"
-authors = ["Luis Alejandro Bordo García <bgluiszz@gmail.com>"]
+authors = ["maany <imptodefeat@gmail.com>", "Luis Alejandro Bordo García <bgluiszz@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+packages = [{include = "lib"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -29,14 +30,6 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
-
-[[tool.mypy.overrides]]
-module = "alembic.env"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-ignore_errors = true
 
 
 [tool.black]
