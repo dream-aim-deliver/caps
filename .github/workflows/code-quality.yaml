@@ -33,8 +33,7 @@ jobs:
         poetry install --no-root
 
     - name: Run mypy
-      run: poetry run mypy . --no-namespace-packages
-
+      run: poetry run mypy .
     - name: Run Black
       if: always()
       run: poetry run black --check .
