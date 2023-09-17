@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install python3-dev libpq-dev # psycopg2
+        sudo apt-get install python3-dev
         python -m pip install --upgrade pip
         poetry env use 3.10
         poetry install --no-root

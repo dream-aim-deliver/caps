@@ -5,9 +5,11 @@ from lib.usecase_models import BaseErrorResponseModel, BaseRequestModel, BaseRes
 class ResponseModel(BaseResponseModel):
     name: str
 
+
 class RequestModel(BaseRequestModel):
     name: str
     type: str
+
 
 class UseCase(BaseInputPort):
     def __init__(self, presenter: BaseOutputPort):
@@ -19,16 +21,18 @@ class UseCase(BaseInputPort):
         responseModel = ResponseModel(name=requestModel.name)
         self.logger.info(f"Returning {responseModel}")
         self.presenter.presentSuccess(responseModel)
-    
+
+
 class Presenter(BaseOutputPort):
     def __init__(self):
         super().__init__()
-    
-    def presentSuccess(self, responseModel: ResponseModel):
+
+    def presentSuccess(self, responseModel: BaseErrorResponseModel):
         print(f"Success: {responseModel}")
-    
+
     def presentError(self, errorModel: BaseErrorResponseModel):
         print(f"Error: {errorModel}")
+
 
 def test_usecase_models(caplog, capfd):
     usecase: BaseInputPort = UseCase(presenter=Presenter())
