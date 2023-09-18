@@ -134,15 +134,14 @@ def test_badly_typed_type_and_subtype():
     assert len(mypy_test_error_report_2) == 1
 
 
-def test_generic_typed_type_and_subtype():
+def test_badly_typed_type_and_subtype_with_generic():
     """
-    Generic NOW SOLVES OUR PROBLEMS!!!!!
+    Generic doesn't solve the problem either
     """
 
     TRequestModel = TypeVar('TRequestModel', bound=BaseRequestModel)
 
     class BaseInputPort_Generic(BaseAbstractClass, Generic[TRequestModel]):
-        # NOTE: the Generic here did the trick
         def __init__(self):
             super().__init__()
 
@@ -158,11 +157,23 @@ def test_generic_typed_type_and_subtype():
         def execute(self, requestModel: RequestModel):
             pass
 
-    # Now everything works as expected
+    class UseCase_bad_1(BaseInputPort_Generic):
+        def __init__(self, presenter: BaseOutputPort):
+            super().__init__()
+            self.presenter = presenter
+
+        def execute(self, requestModel: int):
+            pass
+
+
+    # Everything seems to work...
     mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_Generic, __file__)
     mypy_test_error_report_2 = object_mypy_error_report(UseCase, __file__)
-
     assert len(mypy_test_error_report_1) == 0
     assert len(mypy_test_error_report_2) == 0
+
+    # ...but it does because now the implementation of the abstract class can use anything!
+    mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
+    assert len(mypy_test_error_report_3) == 0
 
 
