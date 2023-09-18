@@ -9,7 +9,7 @@ from os.path import abspath, dirname, basename
 #from os.path import split as path_split
 
 
-def get_mypy_version():
+def get_mypy_version() -> str:
     """
     Returns the version of mypy used for the tests
     """
@@ -17,7 +17,7 @@ def get_mypy_version():
     return api.run(["--version"])[0].split('(')[0]
 
 
-def absolute_path_mypy_result(file_name: str) -> tuple[str, str, int]:
+def absolute_path_mypy_result(file_name: str, strict: bool = False) -> tuple[str, str, int]:
     """
     Returns the mypy result for a file, given the absolute path to that file
     Somehow this finds the pyprojet.toml at the root of the project
@@ -28,7 +28,13 @@ def absolute_path_mypy_result(file_name: str) -> tuple[str, str, int]:
 
     abs_file = abspath(file_name)
 
-    mypy_result = api.run([abs_file])#, "--config-file", "pyproject.toml"])
+    if strict:
+        mypy_result = api.run([abs_file, "--strict"])
+        return mypy_result
+
+    else:
+        mypy_result = api.run([abs_file])#, "--config-file", "pyproject.toml"])
+        return mypy_result
 
     ### OLD VERSION:
     ## NEEDS a pyproject.toml file in the root directory
@@ -75,7 +81,7 @@ def get_function_or_class_line_numbers(function_or_class: Any) -> tuple[int, int
     return start_lineno, end_lineno
 
 
-def object_mypy_error_report(function_or_class_name: Any, file_name: str) -> tuple[tuple[int, str], ...]:
+def object_mypy_error_report(function_or_class_name: Any, file_name: str, strict: bool = False) -> tuple[tuple[int, str], ...]:
     """
     Returns the errors and line numbers from a mypy.api.run result,
     where the function or class definition is involved
@@ -85,7 +91,11 @@ def object_mypy_error_report(function_or_class_name: Any, file_name: str) -> tup
     @return: tuple containing tuples of line numbers and error messages
     """
 
-    mypy_result = absolute_path_mypy_result(file_name)
+    if strict:
+        mypy_result = absolute_path_mypy_result(file_name, strict=True)
+    else:
+        mypy_result = absolute_path_mypy_result(file_name)
+
     errors, errors_line_numbers = get_type_errors_and_line_numbers(mypy_result)
     start_lineno, end_lineno = get_function_or_class_line_numbers(function_or_class_name)
 

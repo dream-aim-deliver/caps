@@ -1,9 +1,14 @@
 """
 Tests for type hinting
+
+Pass 'debug' as the first argument to this script see the mypy --strict errors for the whole file
+so you can check that the tests are capturing the errors that involve them
+Have in mind that not all tests use the --strict flag
 """
 
 from abc import abstractmethod
-from typing import Any, Generic, Type, TypeVar
+import sys
+from typing import Generic, NewType, TypeVar
 from lib.bac import BaseAbstractClass
 from lib.primary_ports import BaseInputPort, BaseOutputPort
 from lib.usecase_models import BaseErrorResponseModel, BaseRequestModel, BaseResponseModel
@@ -15,14 +20,27 @@ from tests.types.mypytest_prototype import (
     object_mypy_error_report)
 
 
-mypy_version = get_mypy_version()
-print(f"mypy version: {mypy_version}")
+def debug_mypy(flag: bool = False) -> None:
+    if flag:
+        mypy_version = get_mypy_version()
+        print(f"mypy version: {mypy_version}")
 
-mypy_result = absolute_path_mypy_result(__file__)
-errors, errors_line_numbers = get_type_errors_and_line_numbers(mypy_result)
+        mypy_result = absolute_path_mypy_result(__file__, strict=True)
+        errors, errors_line_numbers = get_type_errors_and_line_numbers(mypy_result)
 
-print(f"\nmypy errors for the whole file: {errors}")
-print(f"\nmypy error line numbers: {errors_line_numbers}\n")
+        print("\nmypy errors for the whole file:")
+        for error in errors:
+            print(error)
+
+        print(f"\nmypy error line numbers: {errors_line_numbers}\n")
+
+    else:
+        pass
+
+if len(sys.argv) > 1:
+    if sys.argv[1].lower() == "debug":
+        debug_mypy(flag=True)
+
 
 
 class ResponseModel(BaseResponseModel):
@@ -35,7 +53,7 @@ class RequestModel(BaseRequestModel):
 
 
 
-def test_subtypes():
+def test_subtypes() -> None:
     """
     Directly from mypy 1.5.1 docs:
     https://mypy.readthedocs.io/en/stable/kinds_of_types.html#the-type-of-class-objects
@@ -46,11 +64,11 @@ def test_subtypes():
         pass
 
     class BasicUser(User):
-        def upgrade(self):
+        def upgrade(self) -> None:
             """Upgrade to Pro"""
 
     class ProUser(User):
-        def pay(self):
+        def pay(self) -> None:
             """Pay bill"""
 
 
@@ -73,18 +91,18 @@ def test_subtypes():
 
 
 
-def test_badly_typed_subtype_intuition():
+def test_badly_typed_subtype_intuition() -> None:
     """
     This will very clearly fail, as we have not type hinted appropriatedly
     """
 
     class BadlyTypedUseCase(BaseInputPort):
-        def __init__(self, presenter: BaseOutputPort):
+        def __init__(self, presenter: BaseOutputPort) -> None:
             super().__init__()
             self.presenter = presenter
 
         # mypy should capture that RequestModel is not BaseRequestModel, when written like this
-        def execute(self, requestModel: RequestModel):
+        def execute(self, requestModel: RequestModel) -> None:
             pass
 
     mypy_test_error_report = object_mypy_error_report(BadlyTypedUseCase, __file__)
@@ -95,7 +113,7 @@ def test_badly_typed_subtype_intuition():
     assert len(mypy_test_error_report) == 1
 
 
-def test_badly_typed_type_and_subtype():
+def test_badly_typed_type_and_subtype() -> None:
     """
     However, straightfowardly applying the docs to our example, we DON'T get a pass from mypy
     see: https://mypy.readthedocs.io/en/stable/kinds_of_types.html#the-type-of-class-objects
@@ -104,22 +122,22 @@ def test_badly_typed_type_and_subtype():
     TRequestModel = TypeVar('TRequestModel', bound=BaseRequestModel)
 
     class BaseInputPort_MypyDocs(BaseAbstractClass):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
 
         @abstractmethod
-        def execute(self, requestModel: type[TRequestModel]):
+        def execute(self, requestModel: type[TRequestModel]) -> None:
             pass
 
 
     class UseCase(BaseInputPort_MypyDocs):
-        def __init__(self, presenter: BaseOutputPort):
+        def __init__(self, presenter: BaseOutputPort) -> None:
             super().__init__()
             self.presenter = presenter
 
         # from the docs, it looks like mypy should capture that RequestModel IS BaseRequestModel,
         # when written like this...
-        def execute(self, requestModel: RequestModel):
+        def execute(self, requestModel: RequestModel) -> None:
             pass
 
     mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_MypyDocs, __file__)
@@ -134,19 +152,19 @@ def test_badly_typed_type_and_subtype():
     assert len(mypy_test_error_report_2) == 1
 
 
-def test_badly_typed_type_and_subtype_with_generic():
+def test_badly_typed_type_and_subtype_with_generic() -> None:
     """
-    Generic doesn't solve the problem either
+    Generic alone doesn't solve the problem either
     """
 
     TRequestModel = TypeVar('TRequestModel', bound=BaseRequestModel)
 
     class BaseInputPort_Generic(BaseAbstractClass, Generic[TRequestModel]):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
 
         @abstractmethod
-        def execute(self, requestModel: TRequestModel):
+        def execute(self, requestModel: TRequestModel) -> None:
             pass
 
     class UseCase(BaseInputPort_Generic):
@@ -154,7 +172,7 @@ def test_badly_typed_type_and_subtype_with_generic():
             super().__init__()
             self.presenter = presenter
 
-        def execute(self, requestModel: RequestModel):
+        def execute(self, requestModel: RequestModel) -> None:
             pass
 
     class UseCase_bad_1(BaseInputPort_Generic):
@@ -162,7 +180,7 @@ def test_badly_typed_type_and_subtype_with_generic():
             super().__init__()
             self.presenter = presenter
 
-        def execute(self, requestModel: int):
+        def execute(self, requestModel: int) -> None:
             pass
 
 
@@ -172,8 +190,86 @@ def test_badly_typed_type_and_subtype_with_generic():
     assert len(mypy_test_error_report_1) == 0
     assert len(mypy_test_error_report_2) == 0
 
-    # ...but it does because now the implementation of the abstract class can use anything!
+    # ...but it does because mypy is not checking the corresponding error
     mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
     assert len(mypy_test_error_report_3) == 0
 
+    # we need the strict flag to catch this error
+    mypy_test_error_report_3_strict = object_mypy_error_report(UseCase_bad_1, __file__, strict=True)
+    assert len(mypy_test_error_report_3_strict) == 1
+
+
+
+def test_correctly_typed_type_and_subtype() -> None:
+    """
+    Mypy with the --strict flag, using bounds, TypeVar, and Generic, works as expected
+    NOTE: --strict is very picky, and everything must be typed, including the __init__ methods
+    and the base classes of the imports as well, see bac.py
+
+    For the combination of bounds, TypeVar, NewVar, and Generic, see the second answer here:
+    https://stackoverflow.com/questions/54346721/mypy-argument-of-method-incompatible-with-supertype
+    """
+
+    # This is the way to tell mypy to accept a type and any subtypes
+    BoundedBaseRequestModel = TypeVar('BoundedBaseRequestModel', bound=BaseRequestModel)
+
+    class BaseInputPort_Generic(BaseAbstractClass, Generic[BoundedBaseRequestModel]):
+        def __init__(self) -> None:
+            super().__init__()
+
+        @abstractmethod
+        def execute(self, requestModel: BoundedBaseRequestModel) -> None:
+            pass
+
+    class UseCase_Passing_Type_To_Generic(BaseInputPort_Generic[RequestModel]):
+        # NOTE: we NEED to pass the type to the Generic, otherwise mypy --strict will complain
+        # that a type is not passed to the Generic
+        def __init__(self, presenter: BaseOutputPort) -> None:
+            super().__init__()
+            self.presenter = presenter
+
+        def execute(self, requestModel: RequestModel) -> None:
+            pass
+
+    class UseCase_bad_1(BaseInputPort_Generic):
+        # NOTE: watch out for this case!
+        # if mypy doesn't have the --strict flag, it will not catch this, see below
+        def __init__(self, presenter: BaseOutputPort) -> None:
+            super().__init__()
+            self.presenter = presenter
+
+        def execute(self, requestModel: int) -> None:
+            pass
+
+    class UseCase_bad_2(BaseInputPort_Generic[int]):
+        # If we pass the incorrect type to the Generic, mypy always complains, strict or not
+        def __init__(self, presenter: BaseOutputPort) -> None:
+            super().__init__()
+            self.presenter = presenter
+
+        def execute(self, requestModel: int) -> None:
+            pass
+
+    mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_Generic, __file__, strict=True)
+    # The BaseInputPort_MypyDocs works fine, strict or not    
+    assert len(mypy_test_error_report_1) == 0
+
+    mypy_test_error_report_2 = object_mypy_error_report(UseCase_Passing_Type_To_Generic, __file__, strict=True)
+    # This is what we want! passes strict or not
+    assert len(mypy_test_error_report_2) == 0
+
+    mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
+    # NOTE: BUT this case is unsafe without --strict!!!    
+    assert len(mypy_test_error_report_3) == 0
+
+    mypy_test_error_report_3_strict = object_mypy_error_report(UseCase_bad_1, __file__, strict=True)
+    # We need to use the strict flag, otherwise mypy doesn't catch this
+    # It's a 'type-arg' missing error, that is only caught with the strict flag
+    assert len(mypy_test_error_report_3_strict) == 1
+
+    mypy_test_error_report_4 = object_mypy_error_report(UseCase_bad_2, __file__)
+    mypy_test_error_report_4_strict = object_mypy_error_report(UseCase_bad_2, __file__, strict=True)
+    # mypy correctly captures this case, strict or not
+    assert len(mypy_test_error_report_4) == 1
+    assert len(mypy_test_error_report_4_strict) == 1
 
