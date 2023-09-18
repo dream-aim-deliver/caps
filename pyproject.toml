@@ -32,6 +32,9 @@ ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
 explicit_package_bases = true
 check_untyped_defs = true
+exclude = [ 
+  "tests",
+]
 
 [tool.black]
 line-length = 120
