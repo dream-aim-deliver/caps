@@ -13,34 +13,12 @@ from lib.bac import BaseAbstractClass
 from lib.primary_ports import BaseInputPort, BaseOutputPort
 from lib.usecase_models import BaseErrorResponseModel, BaseRequestModel, BaseResponseModel
 
-from tests.types.mypytest_prototype import (
-    get_mypy_version,
-    absolute_path_mypy_result,
-    get_type_errors_and_line_numbers,
-    object_mypy_error_report)
+from tests.types.mypytest_prototype import debug_mypy, object_mypy_error_report
 
-
-def debug_mypy(flag: bool = False) -> None:
-    if flag:
-        mypy_version = get_mypy_version()
-        print(f"mypy version: {mypy_version}")
-
-        mypy_result = absolute_path_mypy_result(__file__, strict=True)
-        errors, errors_line_numbers = get_type_errors_and_line_numbers(mypy_result)
-
-        print("\nmypy errors for the whole file:")
-        for error in errors:
-            print(error)
-
-        print(f"\nmypy error line numbers: {errors_line_numbers}\n")
-
-    else:
-        pass
 
 if len(sys.argv) > 1:
     if sys.argv[1].lower() == "debug":
-        debug_mypy(flag=True)
-
+        debug_mypy(__file__)
 
 
 class ResponseModel(BaseResponseModel):
@@ -50,7 +28,6 @@ class ResponseModel(BaseResponseModel):
 class RequestModel(BaseRequestModel):
     name: str
     type: str
-
 
 
 def test_subtypes() -> None:
@@ -71,24 +48,20 @@ def test_subtypes() -> None:
         def pay(self) -> None:
             """Pay bill"""
 
-
-    U = TypeVar('U', bound=User)
+    U = TypeVar("U", bound=User)
 
     def new_user(user_class: type[U]) -> U:
         user = user_class()
         # (Here we could write the user object to a database)
         return user
 
-
     mypy_test_error_report = object_mypy_error_report(new_user, __file__)
 
     # assert that the class is not in the mypy error report
     assert len(mypy_test_error_report) == 0
 
-
     beginner = new_user(BasicUser)  # Inferred type by the IDE is BasicUser
     beginner.upgrade()  # OK for the IDE
-
 
 
 def test_badly_typed_subtype_intuition() -> None:
@@ -119,7 +92,7 @@ def test_badly_typed_type_and_subtype() -> None:
     see: https://mypy.readthedocs.io/en/stable/kinds_of_types.html#the-type-of-class-objects
     """
 
-    TRequestModel = TypeVar('TRequestModel', bound=BaseRequestModel)
+    TRequestModel = TypeVar("TRequestModel", bound=BaseRequestModel)
 
     class BaseInputPort_MypyDocs(BaseAbstractClass):
         def __init__(self) -> None:
@@ -128,7 +101,6 @@ def test_badly_typed_type_and_subtype() -> None:
         @abstractmethod
         def execute(self, requestModel: type[TRequestModel]) -> None:
             pass
-
 
     class UseCase(BaseInputPort_MypyDocs):
         def __init__(self, presenter: BaseOutputPort) -> None:
@@ -141,7 +113,7 @@ def test_badly_typed_type_and_subtype() -> None:
             pass
 
     mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_MypyDocs, __file__)
-    # The BaseInputPort_MypyDocs works fine    
+    # The BaseInputPort_MypyDocs works fine
     assert len(mypy_test_error_report_1) == 0
 
     mypy_test_error_report_2 = object_mypy_error_report(UseCase, __file__)
@@ -157,7 +129,7 @@ def test_badly_typed_type_and_subtype_with_generic() -> None:
     Generic alone doesn't solve the problem either
     """
 
-    TRequestModel = TypeVar('TRequestModel', bound=BaseRequestModel)
+    TRequestModel = TypeVar("TRequestModel", bound=BaseRequestModel)
 
     class BaseInputPort_Generic(BaseAbstractClass, Generic[TRequestModel]):
         def __init__(self) -> None:
@@ -183,7 +155,6 @@ def test_badly_typed_type_and_subtype_with_generic() -> None:
         def execute(self, requestModel: int) -> None:
             pass
 
-
     # Everything seems to work...
     mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_Generic, __file__)
     mypy_test_error_report_2 = object_mypy_error_report(UseCase, __file__)
@@ -199,7 +170,6 @@ def test_badly_typed_type_and_subtype_with_generic() -> None:
     assert len(mypy_test_error_report_3_strict) == 1
 
 
-
 def test_correctly_typed_type_and_subtype() -> None:
     """
     Mypy with the --strict flag, using bounds, TypeVar, and Generic, works as expected
@@ -211,7 +181,7 @@ def test_correctly_typed_type_and_subtype() -> None:
     """
 
     # This is the way to tell mypy to accept a type and any subtypes
-    BoundedBaseRequestModel = TypeVar('BoundedBaseRequestModel', bound=BaseRequestModel)
+    BoundedBaseRequestModel = TypeVar("BoundedBaseRequestModel", bound=BaseRequestModel)
 
     class BaseInputPort_Generic(BaseAbstractClass, Generic[BoundedBaseRequestModel]):
         def __init__(self) -> None:
@@ -251,7 +221,7 @@ def test_correctly_typed_type_and_subtype() -> None:
             pass
 
     mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_Generic, __file__, strict=True)
-    # The BaseInputPort_MypyDocs works fine, strict or not    
+    # The BaseInputPort_MypyDocs works fine, strict or not
     assert len(mypy_test_error_report_1) == 0
 
     mypy_test_error_report_2 = object_mypy_error_report(UseCase_Passing_Type_To_Generic, __file__, strict=True)
@@ -259,7 +229,7 @@ def test_correctly_typed_type_and_subtype() -> None:
     assert len(mypy_test_error_report_2) == 0
 
     mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
-    # NOTE: BUT this case is unsafe without --strict!!!    
+    # NOTE: BUT this case is unsafe without --strict!!!
     assert len(mypy_test_error_report_3) == 0
 
     mypy_test_error_report_3_strict = object_mypy_error_report(UseCase_bad_1, __file__, strict=True)
@@ -272,4 +242,3 @@ def test_correctly_typed_type_and_subtype() -> None:
     # mypy correctly captures this case, strict or not
     assert len(mypy_test_error_report_4) == 1
     assert len(mypy_test_error_report_4_strict) == 1
-
