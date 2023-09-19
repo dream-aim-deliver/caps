@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TypeVar
 from pydantic import BaseModel
 
 
@@ -19,3 +19,8 @@ class BaseErrorResponseModel(BaseModel):
     status: Literal[False] = False
     code: int
     message: str
+
+
+TBaseRequestModel = TypeVar("TBaseRequestModel", bound=BaseRequestModel)
+TBaseResponseModel = TypeVar("TBaseResponseModel", bound=BaseResponseModel)
+TBaseErrorResponseModel = TypeVar("TBaseErrorResponseModel", bound=BaseErrorResponseModel)

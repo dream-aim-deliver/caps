@@ -1,3 +1,4 @@
+from typing import Any
 from lib.primary_ports import BaseInputPort, BaseOutputPort
 from lib.usecase_models import BaseErrorResponseModel, BaseRequestModel, BaseResponseModel
 
@@ -11,31 +12,35 @@ class RequestModel(BaseRequestModel):
     type: str
 
 
-class UseCase(BaseInputPort):
-    def __init__(self, presenter: BaseOutputPort):
+class ErrorResponseModel(BaseErrorResponseModel):
+    error: str
+
+
+class UseCase(BaseInputPort[RequestModel]):
+    def __init__(self, presenter: BaseOutputPort[ResponseModel, ErrorResponseModel]) -> None:
         super().__init__()
         self.presenter = presenter
 
-    def execute(self, requestModel: RequestModel):
+    def execute(self, requestModel: RequestModel) -> None:
         self.logger.info(f"Executing {self} with {requestModel}")
         responseModel = ResponseModel(name=requestModel.name)
         self.logger.info(f"Returning {responseModel}")
         self.presenter.presentSuccess(responseModel)
 
 
-class Presenter(BaseOutputPort):
-    def __init__(self):
+class Presenter(BaseOutputPort[ResponseModel, ErrorResponseModel]):
+    def __init__(self) -> None:
         super().__init__()
 
-    def presentSuccess(self, responseModel: BaseErrorResponseModel):
+    def presentSuccess(self, responseModel: ResponseModel) -> None:
         print(f"Success: {responseModel}")
 
-    def presentError(self, errorModel: BaseErrorResponseModel):
+    def presentError(self, errorModel: ErrorResponseModel) -> None:
         print(f"Error: {errorModel}")
 
 
-def test_usecase_models(caplog, capfd):
-    usecase: BaseInputPort = UseCase(presenter=Presenter())
+def test_usecase_models(caplog: Any, capfd: Any) -> None:
+    usecase: BaseInputPort[RequestModel] = UseCase(presenter=Presenter())
     requestModel = RequestModel(name="Test", type="Test")
     usecase.execute(requestModel=requestModel)
     # capture log output
