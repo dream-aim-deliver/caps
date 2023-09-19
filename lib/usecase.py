@@ -44,7 +44,7 @@ class BaseSingleDTOUseCase(
         raise NotImplementedError
 
     @abstractmethod
-    def processDTO(self, dto: TBaseDTO) -> TBaseResponseModel | TBaseErrorResponseModel:
+    def process_dto(self, dto: TBaseDTO) -> TBaseResponseModel | TBaseErrorResponseModel:
         raise NotImplementedError
 
     def execute(self, requestModel: TBaseRequestModel | TBaseAuthenticatedRequestModel) -> None:
@@ -54,7 +54,7 @@ class BaseSingleDTOUseCase(
             errorModel: TBaseErrorResponseModel = self.handle_dto_error(dto)
             self.presenter.presentError(errorModel)
         else:
-            responseModel: TBaseResponseModel | TBaseErrorResponseModel = self.processDTO(dto)
+            responseModel: TBaseResponseModel | TBaseErrorResponseModel = self.process_dto(dto)
             if responseModel.status == False:
                 self.presenter.presentError(responseModel)  # type: ignore  # TODO: try to fix this, line 46 cannot change
             else:
