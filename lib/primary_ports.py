@@ -2,9 +2,6 @@ from abc import abstractmethod
 from typing import Generic
 from lib.bac import BaseAbstractClass
 from lib.usecase_models import (
-    BaseErrorResponseModel,
-    BaseRequestModel,
-    BaseResponseModel,
     TBaseErrorResponseModel,
     TBaseRequestModel,
     TBaseResponseModel,
@@ -12,6 +9,13 @@ from lib.usecase_models import (
 
 
 class BaseInputPort(BaseAbstractClass, Generic[TBaseRequestModel]):
+    """
+    Abstract base class for input ports.
+
+    :param requestModel: The request model to use.
+    :type requestModel: TBaseRequestModel
+    """
+
     def __init__(self) -> None:
         super().__init__()
 
