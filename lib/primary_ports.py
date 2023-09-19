@@ -12,8 +12,8 @@ class BaseInputPort(BaseAbstractClass, Generic[TBaseRequestModel]):
     """
     Abstract base class for input ports.
 
-    :param requestModel: The request model to use.
-    :type requestModel: TBaseRequestModel
+    @param requestModel: The request model to use.
+    @type requestModel: TBaseRequestModel
     """
 
     def __init__(self) -> None:
@@ -25,6 +25,19 @@ class BaseInputPort(BaseAbstractClass, Generic[TBaseRequestModel]):
 
 
 class BaseOutputPort(BaseAbstractClass, Generic[TBaseResponseModel, TBaseErrorResponseModel]):
+    """
+    Abstract base class for output ports.
+
+    @type-arg TBaseResponseModel: The response model to use.
+    @type-arg TBaseErrorResponseModel: The error response model to use.
+    @method presentSuccess: Present the success response.
+    @param responseModel: The response model to use.
+    @type responseModel: TBaseResponseModel
+    @method presentError: Present the error response.
+    @param errorModel: The error model to use.
+    @type errorModel: TBaseErrorResponseModel
+    """
+
     def __init__(self) -> None:
         super().__init__()
 

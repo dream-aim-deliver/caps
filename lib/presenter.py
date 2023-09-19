@@ -20,7 +20,7 @@ class BasePresenter(
     """
     Abstract base class for presenters.
 
-    :param response: The presenter response object to use.
+    @param response: The presenter response object to use.
     :type response: TPresenterResponse
     """
 

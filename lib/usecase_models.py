@@ -22,5 +22,6 @@ class BaseErrorResponseModel(BaseModel):
 
 
 TBaseRequestModel = TypeVar("TBaseRequestModel", bound=BaseRequestModel)
+TBaseAuthenticatedRequestModel = TypeVar("TBaseAuthenticatedRequestModel", bound=BaseAuthenticatedRequestModel)
 TBaseResponseModel = TypeVar("TBaseResponseModel", bound=BaseResponseModel)
 TBaseErrorResponseModel = TypeVar("TBaseErrorResponseModel", bound=BaseErrorResponseModel)
