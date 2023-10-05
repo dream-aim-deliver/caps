@@ -56,6 +56,6 @@ class BaseSingleDTOUseCase(
         else:
             responseModel: TBaseResponseModel | TBaseErrorResponseModel = self.process_dto(dto)
             if responseModel.status == False:
-                self.presenter.presentError(responseModel)  # type: ignore  # TODO: try to fix this, line 46 cannot change
+                self.presenter.presentError(responseModel)  # type: ignore
             else:
-                self.presenter.presentSuccess(responseModel)  # type: ignore  # TODO: try to fix this, line 46 cannot change
+                self.presenter.presentSuccess(responseModel)  # type: ignore
