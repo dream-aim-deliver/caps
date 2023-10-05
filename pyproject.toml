@@ -2,7 +2,7 @@
 name = "caps"
 version = "0.1.0"
 description = "Clean Architecture Python SDK"
-authors = ["maany <imptodefeat@gmail.com>", "Luis Alejandro Bordo García <bgluiszz@gmail.com>"]
+authors = ["Mayank Sharma <imptodefeat@gmail.com>", "Luis Alejandro Bordo García <bgluiszz@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "lib"}]
