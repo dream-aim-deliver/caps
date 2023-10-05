@@ -25,6 +25,10 @@ class ResponseModel(BaseResponseModel):
     name: str
 
 
+class ErrorResponseModel(BaseErrorResponseModel):
+    name: str
+
+
 class RequestModel(BaseRequestModel):
     name: str
     type: str
@@ -83,7 +87,8 @@ def test_badly_typed_subtype_intuition() -> None:
     # assert that the class is in the mypy error report
     assert len(mypy_test_error_report) != 0
     # assert how many intentional type errors you coded
-    assert len(mypy_test_error_report) == 1
+    # We're not pasing type-args to BaseInputPort and BaseOutputPort, so we get 2 errors
+    assert len(mypy_test_error_report) == 2
 
 
 def test_badly_typed_type_and_subtype() -> None:
@@ -113,15 +118,15 @@ def test_badly_typed_type_and_subtype() -> None:
             pass
 
     mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_MypyDocs, __file__)
-    # The BaseInputPort_MypyDocs works fine
+    # The BaseInputPort_MypyDocs works fine...
     assert len(mypy_test_error_report_1) == 0
 
     mypy_test_error_report_2 = object_mypy_error_report(UseCase, __file__)
     # ...but UseCase doesn't!
     assert len(mypy_test_error_report_2) != 0
-    # We should get a single mypy error at def execute...
-    # ...in fact, it is the same error as in the previous test
-    assert len(mypy_test_error_report_2) == 1
+    # We get the same type-arg missing error for BaseOutputPort
+    # And now we also get a mypy error at def execute...
+    assert len(mypy_test_error_report_2) == 2
 
 
 def test_badly_typed_type_and_subtype_with_generic() -> None:
@@ -157,17 +162,22 @@ def test_badly_typed_type_and_subtype_with_generic() -> None:
 
     # Everything seems to work...
     mypy_test_error_report_1 = object_mypy_error_report(BaseInputPort_Generic, __file__)
-    mypy_test_error_report_2 = object_mypy_error_report(UseCase, __file__)
-    assert len(mypy_test_error_report_1) == 0
-    assert len(mypy_test_error_report_2) == 0
 
-    # ...but it does because mypy is not checking the corresponding error
-    mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
-    assert len(mypy_test_error_report_3) == 0
+    # NOTE: these tests have to be run without the strict flag
+    # to illustrate what mypy without the flag doesn't catch
+    # we've configured the project for mypy to be strict and it cannot be overriden
 
-    # we need the strict flag to catch this error
+    # mypy_test_error_report_2 = object_mypy_error_report(UseCase, __file__, strict=False)
+    # assert len(mypy_test_error_report_1) == 0
+    # assert len(mypy_test_error_report_2) == 0
+
+    ## ...but it does because mypy is not checking the corresponding error
+    # mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
+    # assert len(mypy_test_error_report_3) == 0
+
+    # This illustrates that need the strict flag to catch the type-arg missing error, not passed to BaseInputPort_Generic and BaseOutputPort
     mypy_test_error_report_3_strict = object_mypy_error_report(UseCase_bad_1, __file__, strict=True)
-    assert len(mypy_test_error_report_3_strict) == 1
+    assert len(mypy_test_error_report_3_strict) == 2
 
 
 def test_correctly_typed_type_and_subtype() -> None:
@@ -194,7 +204,7 @@ def test_correctly_typed_type_and_subtype() -> None:
     class UseCase_Passing_Type_To_Generic(BaseInputPort_Generic[RequestModel]):
         # NOTE: we NEED to pass the type to the Generic, otherwise mypy --strict will complain
         # that a type is not passed to the Generic
-        def __init__(self, presenter: BaseOutputPort) -> None:
+        def __init__(self, presenter: BaseOutputPort[ResponseModel, ErrorResponseModel]) -> None:
             super().__init__()
             self.presenter = presenter
 
@@ -204,7 +214,7 @@ def test_correctly_typed_type_and_subtype() -> None:
     class UseCase_bad_1(BaseInputPort_Generic):
         # NOTE: watch out for this case!
         # if mypy doesn't have the --strict flag, it will not catch this, see below
-        def __init__(self, presenter: BaseOutputPort) -> None:
+        def __init__(self, presenter: BaseOutputPort[ResponseModel, ErrorResponseModel]) -> None:
             super().__init__()
             self.presenter = presenter
 
@@ -213,7 +223,7 @@ def test_correctly_typed_type_and_subtype() -> None:
 
     class UseCase_bad_2(BaseInputPort_Generic[int]):
         # If we pass the incorrect type to the Generic, mypy always complains, strict or not
-        def __init__(self, presenter: BaseOutputPort) -> None:
+        def __init__(self, presenter: BaseOutputPort[ResponseModel, ErrorResponseModel]) -> None:
             super().__init__()
             self.presenter = presenter
 
@@ -228,9 +238,9 @@ def test_correctly_typed_type_and_subtype() -> None:
     # This is what we want! passes strict or not
     assert len(mypy_test_error_report_2) == 0
 
-    mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
-    # NOTE: BUT this case is unsafe without --strict!!!
-    assert len(mypy_test_error_report_3) == 0
+    # mypy_test_error_report_3 = object_mypy_error_report(UseCase_bad_1, __file__)
+    ## NOTE: BUT this case is unsafe without --strict!!!
+    # assert len(mypy_test_error_report_3) == 0
 
     mypy_test_error_report_3_strict = object_mypy_error_report(UseCase_bad_1, __file__, strict=True)
     # We need to use the strict flag, otherwise mypy doesn't catch this
